@@ -20,9 +20,9 @@ def print_banner():
 ██║ ╚═╝ ██║╚██████╔╝██║  ██║╚██████╔╝
 ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ 
 {Fore.RED}╔═════════════════════════════════════════╗
-║  {Fore.YELLOW}[Developer]{Fore.CYAN} Your Name                   {Fore.RED}║
+║  {Fore.YELLOW}[Developer]{Fore.CYAN} Your Name:Mohamed Ramdan                   {Fore.RED}║
 ║  {Fore.YELLOW}[Version]{Fore.CYAN}   2.0.0                      {Fore.RED}║
-║  {Fore.YELLOW}[GitHub]{Fore.CYAN}    github.com/your-username   {Fore.RED}║
+║  {Fore.YELLOW}[GitHub]{Fore.CYAN}    github.com/your-Muro1xB   {Fore.RED}║
 ╚═════════════════════════════════════════╝
 {Fore.GREEN}[+] Advanced Social Media Username Checker Tool
 {Fore.YELLOW}[+] Last Updated: {datetime.now().strftime('%Y-%m-%d')}{Style.RESET_ALL}
