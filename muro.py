@@ -6,7 +6,7 @@ import requests
 import asyncio
 from datetime import datetime
 from colorama import init, Fore, Back, Style
-from pyfiglet import Figlet  # لإضافة نص كبير في البداية
+from pyfiglet import Figlet
 
 # تهيئة colorama
 init(autoreset=True)
@@ -85,13 +85,14 @@ async def check_username(platform, username):
 
     try:
         url = platform_urls.get(platform)
-        async with requests.get(url, headers=headers, timeout=10, allow_redirects=True) as response:
-            if platform == "Instagram":
-                url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
-                async with requests.get(url, headers=headers) as response:
-                    return response.status_code != 200
-            else:
-                return response.status_code == 404
+        response = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
+        
+        if platform == "Instagram":
+            url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
+            response = requests.get(url, headers=headers)
+            return response.status_code != 200
+        else:
+            return response.status_code == 404
 
     except requests.exceptions.RequestException:
         return None
@@ -99,46 +100,25 @@ async def check_username(platform, username):
 # إنشاء أسماء مستخدمين عشوائية
 def generate_usernames(length=3):
     chars = 'abcdefghijklmnopqrstuvwxyz0123456789_'
-    usernames = set()
-    
-    while len(usernames) < 5:
+    while True:
         username = ''.join(random.choice(chars) for _ in range(length))
-        usernames.add(username)
-    
-    return list(usernames)
-
-# البحث عن أسماء مستخدمين مشابهة
-def find_similar_usernames(username):
-    similar = []
-    # إضافة أرقام
-    similar.extend([f"{username}{i}" for i in range(5)])
-    # إضافة شرطة سفلية
-    similar.extend([f"_{username}", f"{username}_"])
-    # استبدال أحرف
-    replacements = {'a':'4', 'e':'3', 'i':'1', 'o':'0', 's':'5'}
-    for old, new in replacements.items():
-        if old in username:
-            similar.append(username.replace(old, new))
-    
-    return similar
+        yield username
 
 # البحث عن أسماء مستخدمين متاحة
 async def check_available_usernames(platform, length=3):
     print(f"\n{Fore.YELLOW}[*] Searching for available usernames...{Style.RESET_ALL}")
-    available = []
-    usernames = generate_usernames(length)
+    username_generator = generate_usernames(length)
     
-    for username in usernames:
+    while True:
+        username = next(username_generator)
         print(f"\r{Fore.CYAN}[*] Checking: {username}", end='')
         result = await check_username(platform, username)
         
         if result:
-            available.append(username)
             print(f"\n{Fore.GREEN}[+] Found available: {username}{Style.RESET_ALL}")
+            return username
         
         await asyncio.sleep(1)  # تجنب حظر IP
-    
-    return available
 
 # تصدير النتائج إلى ملف
 def export_results(results, filename="results.txt"):
@@ -189,9 +169,7 @@ async def main():
             available = await check_available_usernames(platform, length)
             
             if available:
-                print(f"\n{Fore.GREEN}[+] Available usernames:{Style.RESET_ALL}")
-                for username in available:
-                    print(f"{Fore.CYAN}[*] {username}{Style.RESET_ALL}")
+                print(f"\n{Fore.GREEN}[+] Available username found: {available}{Style.RESET_ALL}")
             else:
                 print(f"\n{Fore.RED}[!] No available usernames found{Style.RESET_ALL}")
                 
