@@ -3,32 +3,26 @@ import sys
 import time
 import random
 import requests
+import asyncio
 from datetime import datetime
 from colorama import init, Fore, Back, Style
+from pyfiglet import Figlet  # لإضافة نص كبير في البداية
 
+# تهيئة colorama
 init(autoreset=True)
 
+# إعداد نص كبير لاسم "Muro"
+def print_big_muro():
+    figlet = Figlet(font='big')  # يمكنك تغيير الخط إذا أردت
+    print(Fore.CYAN + figlet.renderText('Muro'))
+    print(Fore.YELLOW + "Advanced Social Media Username Checker Tool")
+    print(Fore.GREEN + f"Version: 2.0.0 | Last Updated: {datetime.now().strftime('%Y-%m-%d')}\n")
+
+# تنظيف الشاشة
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-def print_banner():
-    banner = f'''{Fore.CYAN}
-███╗   ███╗██╗   ██╗██████╗  ██████╗ 
-████╗ ████║██║   ██║██╔══██╗██╔═══██╗
-██╔████╔██║██║   ██║██████╔╝██║   ██║
-██║╚██╔╝██║██║   ██║██╔══██╗██║   ██║
-██║ ╚═╝ ██║╚██████╔╝██║  ██║╚██████╔╝
-╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ 
-{Fore.RED}╔═════════════════════════════════════════╗
-║  {Fore.YELLOW}[Developer]{Fore.CYAN} Your Name:Mohamed Ramdan                   {Fore.RED}║
-║  {Fore.YELLOW}[Version]{Fore.CYAN}   2.0.0                      {Fore.RED}║
-║  {Fore.YELLOW}[GitHub]{Fore.CYAN}    github.com/your-Muro1xB   {Fore.RED}║
-╚═════════════════════════════════════════╝
-{Fore.GREEN}[+] Advanced Social Media Username Checker Tool
-{Fore.YELLOW}[+] Last Updated: {datetime.now().strftime('%Y-%m-%d')}{Style.RESET_ALL}
-'''
-    print(banner)
-
+# عرض القائمة
 def print_menu():
     menu = f'''
 {Fore.CYAN}┌──────────────── SOCIAL PLATFORMS ────────────────┐
@@ -52,6 +46,7 @@ def print_menu():
 {Fore.YELLOW}[*] Select an option: {Style.RESET_ALL}'''
     print(menu)
 
+# عرض رسالة تحميل
 def fancy_loading():
     loading_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
     loading_colors = [Fore.CYAN, Fore.GREEN, Fore.YELLOW, Fore.BLUE, Fore.MAGENTA]
@@ -64,7 +59,8 @@ def fancy_loading():
         time.sleep(0.1)
     print()
 
-def check_username(platform, username):
+# فحص اسم المستخدم على منصة محددة
+async def check_username(platform, username):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -89,18 +85,18 @@ def check_username(platform, username):
 
     try:
         url = platform_urls.get(platform)
-        response = requests.get(url, headers=headers, timeout=10, allow_redirects=True)
-        
-        if platform == "Instagram":
-            url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
-            response = requests.get(url, headers=headers)
-            return response.status_code != 200
-        else:
-            return response.status_code == 404
+        async with requests.get(url, headers=headers, timeout=10, allow_redirects=True) as response:
+            if platform == "Instagram":
+                url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
+                async with requests.get(url, headers=headers) as response:
+                    return response.status_code != 200
+            else:
+                return response.status_code == 404
 
     except requests.exceptions.RequestException:
         return None
 
+# إنشاء أسماء مستخدمين عشوائية
 def generate_usernames(length=3):
     chars = 'abcdefghijklmnopqrstuvwxyz0123456789_'
     usernames = set()
@@ -111,13 +107,14 @@ def generate_usernames(length=3):
     
     return list(usernames)
 
+# البحث عن أسماء مستخدمين مشابهة
 def find_similar_usernames(username):
     similar = []
-    # Add numbers
+    # إضافة أرقام
     similar.extend([f"{username}{i}" for i in range(5)])
-    # Add underscores
+    # إضافة شرطة سفلية
     similar.extend([f"_{username}", f"{username}_"])
-    # Replace letters
+    # استبدال أحرف
     replacements = {'a':'4', 'e':'3', 'i':'1', 'o':'0', 's':'5'}
     for old, new in replacements.items():
         if old in username:
@@ -125,23 +122,25 @@ def find_similar_usernames(username):
     
     return similar
 
-def check_available_usernames(platform):
+# البحث عن أسماء مستخدمين متاحة
+async def check_available_usernames(platform, length=3):
     print(f"\n{Fore.YELLOW}[*] Searching for available usernames...{Style.RESET_ALL}")
     available = []
-    usernames = generate_usernames()
+    usernames = generate_usernames(length)
     
     for username in usernames:
         print(f"\r{Fore.CYAN}[*] Checking: {username}", end='')
-        result = check_username(platform, username)
+        result = await check_username(platform, username)
         
         if result:
             available.append(username)
             print(f"\n{Fore.GREEN}[+] Found available: {username}{Style.RESET_ALL}")
         
-        time.sleep(1)  # Avoid rate limiting
+        await asyncio.sleep(1)  # تجنب حظر IP
     
     return available
 
+# تصدير النتائج إلى ملف
 def export_results(results, filename="results.txt"):
     try:
         with open(filename, 'w') as f:
@@ -152,10 +151,11 @@ def export_results(results, filename="results.txt"):
     except:
         return False
 
-def main():
+# الدالة الرئيسية
+async def main():
     while True:
         clear_screen()
-        print_banner()
+        print_big_muro()  # عرض اسم "Muro" بشكل كبير
         print_menu()
         
         choice = input().strip()
@@ -176,7 +176,7 @@ def main():
             print(f"\n{Fore.CYAN}[*] Checking {username} on {platforms[choice]}...")
             fancy_loading()
             
-            result = check_username(platforms[choice], username)
+            result = await check_username(platforms[choice], username)
             if result is not None:
                 status = f"{Fore.GREEN}Available" if result else f"{Fore.RED}Taken"
                 print(f"\n{Fore.CYAN}[Result] {status} on {platforms[choice]}{Style.RESET_ALL}")
@@ -185,7 +185,8 @@ def main():
             
         elif choice == "13":
             platform = input(f"\n{Fore.YELLOW}[*] Enter platform to search (e.g., Instagram): {Style.RESET_ALL}")
-            available = check_available_usernames(platform)
+            length = int(input(f"{Fore.YELLOW}[*] Enter the length of the username: {Style.RESET_ALL}"))
+            available = await check_available_usernames(platform, length)
             
             if available:
                 print(f"\n{Fore.GREEN}[+] Available usernames:{Style.RESET_ALL}")
@@ -202,17 +203,17 @@ def main():
             print(f"\n{Fore.CYAN}[*] Checking similar usernames...{Style.RESET_ALL}")
             
             for similar_username in similar:
-                result = check_username(platform, similar_username)
+                result = await check_username(platform, similar_username)
                 if result:
                     print(f"{Fore.GREEN}[+] Available: {similar_username}{Style.RESET_ALL}")
-                time.sleep(1)
+                await asyncio.sleep(1)
                 
         elif choice == "15":
             username = input(f"\n{Fore.YELLOW}[*] Enter username to check all platforms: {Style.RESET_ALL}")
             results = []
             
             for platform in ["Instagram", "TikTok", "Twitter", "Facebook", "Snapchat"]:
-                result = check_username(platform, username)
+                result = await check_username(platform, username)
                 status = "Available" if result else "Taken"
                 results.append(f"{platform}: {status}")
             
@@ -226,9 +227,10 @@ def main():
             
         input(f"\n{Fore.GREEN}[*] Press Enter to continue...{Style.RESET_ALL}")
 
+# تشغيل الأداة
 if __name__ == "__main__":
     try:
-        main()
+        asyncio.run(main())
     except KeyboardInterrupt:
         print(f"\n\n{Fore.RED}[!] Tool terminated by user{Style.RESET_ALL}")
         sys.exit(1)
