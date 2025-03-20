@@ -10,5 +10,5 @@ git clone https://github.com/Muro1xB/Test-one.git
 cd Test-one
 ```
 ```bash
-python muro
+python muro.py
 ```
